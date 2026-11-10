@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>🎨 규칙 만들기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
+<style>
+:root{--bg:#fff;--pa:#a8a8a8;--pb:#eeeeee;--ink:#222;--card:#fff;--line:#bbb;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+
+
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Jua","Noto Sans KR","Malgun Gothic",sans-serif}
+#app{display:flex;height:100%}
+.panel{flex:1;min-width:0;display:flex;flex-direction:column;padding:10px;overflow:auto}
+.panel.a{background:var(--pa)}.panel.b{background:var(--pb);border-left:4px solid var(--line)}
+h2{margin:0 0 10px;font-size:26px;text-align:center;background:#fff;border-radius:999px;padding:6px 10px;box-shadow:0 3px 0 #0003}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs button{flex:1;font-size:16px;padding:10px 4px;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);cursor:pointer;font-family:inherit}
+.tabs button.on{background:#ffd54f;color:#222;border-color:#f9a825}
+.act{display:none;flex-direction:column;align-items:center;gap:10px}.act.on{display:flex}
+.pal,.shp,.opts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.sw{width:40px;height:40px;border-radius:50%;border:3px solid var(--line);cursor:pointer;padding:0;font-size:20px;color:var(--ink)}
+.sw.on,.sh.on,.opt.on{outline:4px solid #ff7043;outline-offset:2px}
+.sh{width:48px;height:48px;border:2px solid var(--line);border-radius:10px;background:var(--card);cursor:pointer;padding:3px}
+.opt,.btn{font-size:18px;padding:8px 14px;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);cursor:pointer;font-family:inherit}
+.btn{background:#66bb6a;color:#fff;border-color:#388e3c}
+.grid{display:grid;gap:4px;width:100%}
+.cell{aspect-ratio:1;background:var(--card);border:2px solid var(--line);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:3px;box-sizing:border-box}
+.cell svg{width:100%;height:100%}
+.wall{gap:0;padding:0;background:#fff;border-top:1px solid #999;border-left:1px solid #999}
+.wall .cell{border:0;border-right:1px solid #999;border-bottom:1px solid #999;border-radius:0;padding:0;cursor:default;background:#fff}
+.seam{gap:0}.seam .cell{border:1px solid var(--line);border-radius:0;padding:0}
+.hint{font-size:17px;margin:0}
+.sw,.sh,.opt,.btn,.tabs button{box-shadow:0 3px 0 #0002;transition:transform .1s}
+.sw:hover,.sh:hover,.opt:hover,.btn:hover{transform:scale(1.1)}
+.sw:active,.sh:active,.opt:active,.btn:active,.cell:active{transform:scale(.92)}
+</style></head><body>
+<div id="app"></div>
+<script>
+const COLORS=['#e53935','#fb8c00','#fdd835','#43a047','#1e88e5','#8e24aa','#ec407a','#795548','#222222','#ffffff'];
+const NAMES={qc0:'왼쪽 위 1/4 원',qc1:'오른쪽 위 1/4 원',qc2:'오른쪽 아래 1/4 원',qc3:'왼쪽 아래 1/4 원',ht0:'위쪽 반 삼각형',ht1:'오른쪽 반 삼각형',ht2:'아래쪽 반 삼각형',ht3:'왼쪽 반 삼각형',qt0:'왼쪽 위 1/4 삼각형',qt1:'오른쪽 위 1/4 삼각형',qt2:'오른쪽 아래 1/4 삼각형',qt3:'왼쪽 아래 1/4 삼각형',full:'꽉 찬 사각형',hg:'모래시계',square:'정사각형',star:'별',diamond:'마름모',circle:'원',moon:'달',heart:'하트',flower:'꽃'};
+const STAR=(()=>{let p=[];for(let i=0;i<10;i++){const r=i%2?19:44,a=-Math.PI/2+i*Math.PI/5;p.push((50+r*Math.cos(a)).toFixed(1)+','+(52+r*Math.sin(a)).toFixed(1))}return p.join(' ')})();
+const BASIC=['square','star','diamond','circle','moon','heart','flower','hg'];
+const TILE=['qc0','qc1','qc2','qc3','ht0','ht1','ht2','ht3','qt0','qt1','qt2','qt3','circle','full','hg'];
+const TG={qc0:'<path d="M0 0H50A50 50 0 0 1 0 50Z"',qc1:'<path d="M100 0V50A50 50 0 0 1 50 0Z"',qc2:'<path d="M100 100H50A50 50 0 0 1 100 50Z"',qc3:'<path d="M0 100V50A50 50 0 0 1 50 100Z"',ht0:'<polygon points="0,0 100,0 50,50"',ht1:'<polygon points="100,0 100,100 50,50"',ht2:'<polygon points="0,100 100,100 50,50"',ht3:'<polygon points="0,0 0,100 50,50"',qt0:'<polygon points="0,0 50,0 0,50"',qt1:'<polygon points="100,0 100,50 50,0"',qt2:'<polygon points="100,100 50,100 100,50"',qt3:'<polygon points="0,100 0,50 50,100"',circle:'<circle cx="50" cy="50" r="50"',full:'<rect width="100" height="100"',hg:'<polygon points="0,0 100,0 50,50 100,100 0,100 50,50"'};
+function svg(s,c,t){
+ if(t){const e=t==1?`fill="${c}"`:`fill="${c}" stroke="rgba(0,0,0,.4)" stroke-width="3"`;return `<svg viewBox="${t==1?'0 0 100 100':'-3 -3 106 106'}">${TG[s]} ${e}/></svg>`}
+ const f=`fill="${c}" stroke="rgba(0,0,0,.35)" stroke-width="3"`;let b;
+ if(s=='square')b=`<rect x="12" y="12" width="76" height="76" ${f}/>`;
+ else if(s=='star')b=`<polygon points="${STAR}" ${f}/>`;
+ else if(s=='diamond')b=`<polygon points="50,6 94,50 50,94 6,50" ${f}/>`;
+ else if(s=='circle')b=`<circle cx="50" cy="50" r="40" ${f}/>`;
+ else if(s=='moon')b=`<path d="M60 8A42 42 0 1 0 92 66A34 34 0 0 1 60 8Z" ${f}/>`;
+ else if(s=='heart')b=`<path d="M50 90C8 58 4 32 26 20C38 14 48 20 50 30C52 20 62 14 74 20C96 32 92 58 50 90Z" ${f}/>`;
+ else if(s=='hg')b=`<polygon points="18,10 82,10 50,50 82,90 18,90 50,50" ${f}/>`;
+ else{b='';for(let i=0;i<5;i++){const a=i*2*Math.PI/5-Math.PI/2;b+=`<circle cx="${(50+27*Math.cos(a)).toFixed(1)}" cy="${(50+27*Math.sin(a)).toFixed(1)}" r="19" ${f}/>`}b+=`<circle cx="50" cy="50" r="13" fill="#fff" fill-opacity=".8"/>`}
+ return `<svg viewBox="0 0 100 100">${b}</svg>`}
+function el(t,c,h){const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e}
+function tools(shapes){
+ const st={color:COLORS[0],shape:shapes&&shapes[0]},pal=el('div','pal'),shp=el('div','shp');
+ const mk=c=>{const b=el('button','sw',c?'':'🧽');b.style.background=c||'var(--card)';b.title=c?'':'지우개';
+  b.onclick=()=>{st.color=c;[...pal.children].forEach(x=>x.classList.toggle('on',x===b))};
+  if(c===st.color)b.classList.add('on');pal.append(b)};
+ COLORS.forEach(mk);mk(null);
+ if(shapes)shapes.forEach(k=>{const b=el('button','sh',svg(k,'#9e9e9e',shapes[0]=='qc0'?2:0));b.title=NAMES[k];
+  if(k==st.shape)b.classList.add('on');
+  b.onclick=()=>{st.shape=k;[...shp.children].forEach(x=>x.classList.toggle('on',x===b))};shp.append(b)});
+ return {pal,shp,st}}
+function board(cols,rows,st,mode,maxW,seam){
+ const g=el('div','grid'+(seam?' seam':''));g.style.maxWidth=maxW+'px';g.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+ const data=Array(cols*rows).fill(null),cells=[];
+ const draw=i=>{const v=data[i],c=cells[i];if(mode=='color')c.style.background=v||'';else c.innerHTML=v?svg(v.s,v.c,seam):''};
+ for(let i=0;i<cols*rows;i++){const c=el('div','cell');
+  c.onclick=()=>{data[i]=st.color?(mode=='color'?st.color:{c:st.color,s:st.shape}):null;draw(i)};
+  cells.push(c);g.append(c)}
+ return {g,data}}
+function act1(){const d=el('div','act'),t=tools(false),b=board(4,4,t.st,'color',360);
+ d.append(t.pal,el('p','hint','🌈 색을 고르고 칸을 눌러 규칙을 만들어요'),b.g);return d}
+function act2(){const d=el('div','act'),opts=el('div','opts'),slot=el('div'),t=tools(BASIC);
+ slot.style.cssText='width:100%;display:flex;justify-content:center';
+ const set=n=>{[...opts.children].forEach(x=>x.classList.toggle('on',x.dataset.n==n));slot.innerHTML='';slot.append(board(n,1,t.st,'shape',n*80).g)};
+ [6,8,9].forEach(n=>{const b=el('button','opt','1×'+n);b.dataset.n=n;b.onclick=()=>set(n);opts.append(b)});
+ d.append(opts,t.pal,slot,t.shp);set(6);return d}
+function act3(){const d=el('div','act'),t=tools(TILE);let n=2,b=board(n,n,t.st,'shape',n*110,1);const slot=el('div'),sz=el('div','opts'),wall=el('div','grid wall'),bt=el('div','opts');
+ wall.style.maxWidth='480px';slot.style.cssText='width:100%;display:flex;justify-content:center';slot.append(b.g);
+ const blank=()=>{wall.style.gridTemplateColumns=`repeat(${n*3},1fr)`;wall.innerHTML='';for(let i=0;i<n*n*9;i++)wall.append(el('div','cell'))};
+ const fill=el('button','btn','🧱 벽 채우기'),clr=el('button','opt','🧹 벽 지우기');
+ fill.onclick=()=>{wall.innerHTML='';wall.style.gridTemplateColumns=`repeat(${n*3},1fr)`;for(let r=0;r<n*3;r++)for(let c=0;c<n*3;c++){const v=b.data[(r%n)*n+c%n];wall.append(el('div','cell',v?svg(v.s,v.c,1):''))}};
+ clr.onclick=blank;
+ [2,3,4].forEach(k=>{const o=el('button','opt',k+'×'+k);o.onclick=()=>{n=k;[...sz.children].forEach(x=>x.classList.toggle('on',x===o));b=board(k,k,t.st,'shape',k*110,1);slot.innerHTML='';slot.append(b.g);blank()};sz.append(o)});
+ sz.children[0].classList.add('on');blank();bt.append(fill,clr);
+ d.append(sz,t.pal,slot,t.shp,bt,wall);return d}
+function panel(cls,name){
+ const p=el('section','panel '+cls,`<h2>${name}</h2>`),tabs=el('div','tabs'),acts=[act1(),act2(),act3()];
+ ['🎨 색깔 규칙','⭐ 모양 규칙','🧱 타일 만들기'].forEach((n,i)=>{const b=el('button','',n);
+  b.onclick=()=>{[...tabs.children].forEach((x,j)=>x.classList.toggle('on',j==i));acts.forEach((a,j)=>a.classList.toggle('on',j==i))};tabs.append(b)});
+ p.append(tabs,...acts);tabs.children[0].click();return p}
+document.getElementById('app').append(panel('a','🐰 왼쪽 짝 🥕'),panel('b','🐻 오른쪽 짝 🍯'));
+</script></body></html>
